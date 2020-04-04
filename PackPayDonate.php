@@ -19,7 +19,8 @@ if (is_admin()) {
     add_action('admin_menu', 'PP_AdminMenuItem');
     function PP_AdminMenuItem()
     {
-        add_menu_page('تنظیمات افزونه حمایت مالی - پکپی', 'حمات مالی', 'administrator', 'PP_MenuItem', 'PP_MainPageHTML', /*plugins_url( 'myplugin/images/icon.png' )*/ '', 6);
+        add_menu_page('تنظیمات افزونه حمایت مالی - پکپی', 'حمات مالی', 'administrator', 'PP_MenuItem', 'PP_MainPageHTML', /*plugins_url( 'myplugin/images/icon.png' )*/
+            '', 6);
         add_submenu_page('PP_MenuItem', 'نمایش حامیان مالی', 'نمایش حامیان مالی', 'administrator', 'PP_Hamian', 'PP_HamianHTML');
     }
 }
@@ -33,13 +34,15 @@ function PP_HamianHTML()
 {
     include('PP_Hamian.php');
 }
-function PPgetDate($date){
-    if (function_exists('jdate')){
-        return jdate('Y-m-d H:i',$date);
+
+function PPgetDate($date)
+{
+    if (function_exists('jdate')) {
+        return jdate('Y-m-d H:i', $date);
     }
-     if (function_exists('parsidate')){
-        return parsidate('Y-m-d H:i',$date);
-     }
+    if (function_exists('parsidate')) {
+        return parsidate('Y-m-d H:i', $date);
+    }
     return $date;
 }
 
@@ -101,7 +104,7 @@ function getToken()
     ];
 
     $body = [
-        'refresh_token'=>$_ref_token
+        'refresh_token' => $_ref_token
     ];
     $userPass = "$_client_ID:$_client_Secret";
     $result = post2http($body, $url, $headers, $userPass);
@@ -143,95 +146,95 @@ function PPDonateForm()
     //            REQUEST
     if (isset($_POST['submit']) && $_POST['submit'] == 'پرداخت') {
         $_ref_token = get_option('PP_TOKEN');
-          $_client_ID = get_option('PP_ClientID');
-         $_client_Secret = get_option('PP_ClientSecret');
-    if ($_ref_token == '' || $_client_ID == '' || $_client_Secret == '') {
-        $error = 'لطفا اطلاعات را در مدیریت وارد کنید.' . "<br>\r\n";
-    }else{
-
-        $Amount = filter_input(INPUT_POST, 'PP_Amount', FILTER_SANITIZE_SPECIAL_CHARS);
-
-
-        if (is_numeric($Amount) != false) {
-            //Amount will be based on Toman  - Required
-            if ($PP_Unit == 'ریال')
-                $SendAmount = $Amount;
-            else
-                $SendAmount = $Amount * 10;
+        $_client_ID = get_option('PP_ClientID');
+        $_client_Secret = get_option('PP_ClientSecret');
+        if ($_ref_token == '' || $_client_ID == '' || $_client_Secret == '') {
+            $error = 'لطفا اطلاعات را در مدیریت وارد کنید.' . "<br>\r\n";
         } else {
-            $error .= 'مبلغ به درستی وارد نشده است' . "<br>\r\n";
-        }
-        $Description = filter_input(INPUT_POST, 'PP_Description', FILTER_SANITIZE_SPECIAL_CHARS);  // Required
-        $Name = filter_input(INPUT_POST, 'PP_Name', FILTER_SANITIZE_SPECIAL_CHARS);  // Required
-        $Mobile = filter_input(INPUT_POST, 'mobile', FILTER_SANITIZE_SPECIAL_CHARS); // Optional
-        $Email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_SPECIAL_CHARS); // Optional
-        
-        if ($Email && !filter_var($Email, FILTER_VALIDATE_EMAIL)) {
-            $error .= 'ایمیل معتبر نیست' . "<br>\r\n";
-        }
-        if ($SendAmount<1000){
-            $error .= 'مبلغ نباید کمتر از ۱۰۰ تومان باشد' . "<br>\r\n";
-        }
 
-        $SendDescription = $Name . ' | ' . $Mobile . ' | ' . $Email . ' | ' . $Description;
-
-        if ($error == '') // اگر خطایی نباشد
-        {
-            $CallbackURL = PP_GetCallBackURL();  // Required
-            //     $CallbackURL = "https://vahidrezazadeh.ir/%d8%aa%d8%b3%d8%aa-%d8%ad%d9%85%d8%a7%db%8c%d8%aa-%d9%85%d8%a7%d9%84%db%8c";
-            $result = getToken();
-            if (isset($result->access_token) && $result->access_token) {
-
-                $url = "https://dashboard.packpay.ir/developers/bank/api/v1/purchase?amount=$SendAmount&callback_url=$CallbackURL";
-
-                $headers = array();
-                $headers[] = 'Accept: application/json';
-                $headers[] = 'Authorization: Bearer ' . $result->access_token;
-
-                $body = [
-                    "amount" => $SendAmount,
-                    'callback_url' => $CallbackURL,
-                    'payer_name' => $Name,
-                    'payer_id' => $Mobile
-                ];
-                $result = post2http($body, $url, $headers);
-                $result = json_decode($result);
-                if ($result->status == 0) {
-
-                    PP_AddDonate(array(
-                        'Authority' => $result->reference_code,
-                        'Name' => $Name,
-                        'AmountTomaan' => $SendAmount,
-                        'Mobile' => $Mobile,
-                        'Email' => $Email,
-                        'InputDate' => current_time('mysql'),
-                        'Description' => $Description,
-                        'Status' => 'SEND'
-                    ), array(
-                        '%s',
-                        '%s',
-                        '%d',
-                        '%s',
-                        '%s',
-                        '%s',
-                        '%s',
-                        '%s'
-                    ));
-                    $Location = "https://dashboard.packpay.ir/bank/purchase/send?RefId=" . $result->reference_code;
-
-                    return "<script>document.location = '${Location}'</script><center>در صورتی که به صورت خودکار به درگاه بانک منتقل نشدید <a href='${Location}'>اینجا</a> را کلیک کنید.</center>";
-
-                } else {
-                    $error .= $result->message . "<br>\r\n";
-                }
+            $Amount = filter_input(INPUT_POST, 'PP_Amount', FILTER_SANITIZE_SPECIAL_CHARS);
 
 
+            if (is_numeric($Amount) != false) {
+                //Amount will be based on Toman  - Required
+                if ($PP_Unit == 'ریال')
+                    $SendAmount = $Amount;
+                else
+                    $SendAmount = $Amount * 10;
             } else {
-                $error .= $result->error_description . "<br>\r\n";
+                $error .= 'مبلغ به درستی وارد نشده است' . "<br>\r\n";
+            }
+            $Description = filter_input(INPUT_POST, 'PP_Description', FILTER_SANITIZE_SPECIAL_CHARS);  // Required
+            $Name = filter_input(INPUT_POST, 'PP_Name', FILTER_SANITIZE_SPECIAL_CHARS);  // Required
+            $Mobile = filter_input(INPUT_POST, 'mobile', FILTER_SANITIZE_SPECIAL_CHARS); // Optional
+            $Email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_SPECIAL_CHARS); // Optional
+
+            if ($Email && !filter_var($Email, FILTER_VALIDATE_EMAIL)) {
+                $error .= 'ایمیل معتبر نیست' . "<br>\r\n";
+            }
+            if ($SendAmount < 1000) {
+                $error .= 'مبلغ نباید کمتر از ۱۰۰ تومان باشد' . "<br>\r\n";
             }
 
+            $SendDescription = $Name . ' | ' . $Mobile . ' | ' . $Email . ' | ' . $Description;
+
+            if ($error == '') // اگر خطایی نباشد
+            {
+                $CallbackURL = PP_GetCallBackURL();  // Required
+                //     $CallbackURL = "https://vahidrezazadeh.ir/%d8%aa%d8%b3%d8%aa-%d8%ad%d9%85%d8%a7%db%8c%d8%aa-%d9%85%d8%a7%d9%84%db%8c";
+                $result = getToken();
+                if (isset($result->access_token) && $result->access_token) {
+
+                    $url = "https://dashboard.packpay.ir/developers/bank/api/v1/purchase?amount=$SendAmount&callback_url=$CallbackURL&verify_on_request=true";
+
+                    $headers = array();
+                    $headers[] = 'Accept: application/json';
+                    $headers[] = 'Authorization: Bearer ' . $result->access_token;
+
+                    $body = [
+                        "amount" => $SendAmount,
+                        'callback_url' => $CallbackURL,
+                        'payer_name' => $Name,
+                        'payer_id' => $Mobile
+                    ];
+                    $result = post2http($body, $url, $headers);
+                    $result = json_decode($result);
+                    if ($result->status == 0) {
+
+                        PP_AddDonate(array(
+                            'Authority' => $result->reference_code,
+                            'Name' => $Name,
+                            'AmountTomaan' => $SendAmount,
+                            'Mobile' => $Mobile,
+                            'Email' => $Email,
+                            'InputDate' => current_time('mysql'),
+                            'Description' => $Description,
+                            'Status' => 'SEND'
+                        ), array(
+                            '%s',
+                            '%s',
+                            '%d',
+                            '%s',
+                            '%s',
+                            '%s',
+                            '%s',
+                            '%s'
+                        ));
+                        $Location = "https://dashboard.packpay.ir/bank/purchase/send?RefId=" . $result->reference_code;
+
+                        return "<script>document.location = '${Location}'</script><center>در صورتی که به صورت خودکار به درگاه بانک منتقل نشدید <a href='${Location}'>اینجا</a> را کلیک کنید.</center>";
+
+                    } else {
+                        $error .= $result->message . "<br>\r\n";
+                    }
+
+
+                } else {
+                    $error .= $result->error_description . "<br>\r\n";
+                }
+
+            }
         }
-    }
     }
     //// END REQUEST
 
@@ -248,37 +251,31 @@ function PPDonateForm()
             $headers = array();
             $token = getToken();
             $headers[] = 'Accept: application/json;charset=UTF-8';
-            $url = "https://dashboard.packpay.ir/developers/bank/api/v1/purchase?reference_code=" . $refCode;
+            $url = "https://dashboard.packpay.ir/developers/bank/api/v1/purchase/verify?reference_code=" . $refCode;
 
             $headers[] = 'Authorization: Bearer ' . $token->access_token;
-            $result = getHttpReq($url, $headers);
-             if ($result->status == 0) {
-                 
-                 if ($result->data[0]->transactionStatus== 'موفق') {
-                    PP_ChangeStatus($refCode, 'OK');
-                    $message .= get_option('PP_IsOk') ;
-                 $message=str_replace('[refcode]',$refCode,$message);
+            $body = [
+                "reference_code" => $refCode
+            ];
+            $result = post2http($body, $url, $headers);
+            $result = json_decode($result);
+            if ($result->status == 0 && $result->message == 'successful') {
+                PP_ChangeStatus($refCode, 'OK');
+                $message .= get_option('PP_IsOk');
+                $message = str_replace('[refcode]', $refCode, $message);
+                //   $message .= 'کد پیگیری تراکنش:' . $refCode . "<br>\r\n";
+                $PP_TotalAmount = get_option("PP_TotalAmount");
+                update_option("PP_TotalAmount", $PP_TotalAmount + $Record['AmountTomaan']);
+            } else {
+                PP_ChangeStatus($refCode, 'ERROR');
+                $error .= get_option('PP_IsError') . "<br>\r\n";
+            }
 
-                 //   $message .= 'کد پیگیری تراکنش:' . $refCode . "<br>\r\n";
-    
-                    $PP_TotalAmount = get_option("PP_TotalAmount");
-                    update_option("PP_TotalAmount", $PP_TotalAmount + $Record['AmountTomaan']);
-                } else {
-                    PP_ChangeStatus($refCode, 'ERROR');
-                    $error .= get_option('PP_IsError') . "<br>\r\n";
-                }
-             
-             
-                 
-             }else{
-                 $error .= 'خطا بانکی.' . "<br>\r\n";
-             }
-           
-            
+
         }
 
     } else {
-      //  $error .= 'پرداخت انجام نشده.' . "<br>\r\n";
+        //  $error .= 'پرداخت انجام نشده.' . "<br>\r\n";
     }
     ///     END RESPONSE
 
